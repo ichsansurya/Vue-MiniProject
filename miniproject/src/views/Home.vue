@@ -101,4 +101,8 @@ img {
   border-radius: 50px;
   margin-right: 40px;
 }
+<<<<<<< HEAD
 </style>
+=======
+</style>
+>>>>>>> development
