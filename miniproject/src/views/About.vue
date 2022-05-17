@@ -73,20 +73,116 @@
           </div>
         </div>
       </div>
-		<div class="todo">	
-		</div>
+		<div class="apollo">
+            <h3><strong>Silahkan Masukkan Review Terhadap Kedai Kami</strong></h3>
+        <ApolloQuery
+        :query="
+        (gql) => gql`
+          query MyQuery {
+            review_makanan {
+              id
+              review
+            }
+          }
+        `
+      "
+    >
+      <template v-slot="{ result: { loading, error, data } }">
+        <!-- Loading -->
+        <div v-if="loading" class="loading apollo">Loading...</div>
+
+        <!-- Error -->
+        <div v-else-if="error" class="error apollo">An error occurred</div>
+
+        <!-- Result -->
+        <div v-else-if="data" class="result apollo">
+          <TodoComponent
+            v-for="(todoItem, index) in data.review_makanan"
+            :key="todoItem.id"
+            :index="index"
+            :todo-item="todoItem"
+            @edit-todo="editTodo"
+            @delete-todo="deleteTodo"
+          />
+          
+        </div>
+
+        <!-- No result -->
+         <div v-else class="no-result apollo">No result :(</div>
+      </template>
+    </ApolloQuery>
+
+    <ApolloMutation
+      :mutation="
+        (gql) => gql`
+        mutation MyMutation($object: review_makanan_insert_input = {}) {
+          insert_review_makanan_one(object: $object) {
+            id
+            review
+          }
+        }
+        `
+      "
+      :variables="{ object: { review: todo } }"
+    >
+      <template v-slot="{ mutate, loading, error }">
+        <div v-if="loading" class="loading apollo">Loading...</div>
+        <input type="text" name="todo" v-model="todo" placeholder="Masukkan Review"/>
+        <input type="button" @click="mutate()" value="Tambahkan" />
+
+        <!-- <button :disabled="loading" @click="mutate()">Click me</button> -->
+        <p v-if="error">An error occurred: {{ error }}</p>
+      </template>
+    </ApolloMutation>
+    </div>
+    <!-- </div> -->
+      <!-- </div> -->
     </div>
   </div>
 </template>
 <script>
 import Navbar from "../components/Navbar.vue";
-
+import TodoComponent from "../components/TodoComponent.vue";
 
 export default {
   name: "about",
   components: {
     Navbar,
-},
+    TodoComponent,
+  },
+  data() {
+    return {
+    todo: "",
+    todos: {},
+    isEmpty: false,
+    }
+  },
+
+  computed: {
+    todosLength() {
+      return this.todos.length;
+    },
+  },
+  methods: {
+    onUpdated(previousResult, { subscriptionData }) {
+      return {
+          todoList: subscriptionData.data.todoList
+      }
+    },
+    addTodo() {
+      this.todos.push({
+        name: this.todo,
+      });
+    },
+    editTodo(todoId, todoBody) {
+      this.todos = this.todos.map((todo) =>
+        todo.id === todoId ? { ...todo, title: todoBody } : todo
+      );
+    },
+    deleteTodo(todoId) {
+      this.todos = this.todos.filter((todo) => todo.id !== todoId);
+    },
+  }
 };
 </script>
 
@@ -94,17 +190,25 @@ export default {
 
 <style scoped>
 .brand {
-	text-align: center;
+  text-align: center;
 }
 .deskripsi {
-	display: flex;
+  display: flex;
 }
 .maps {
-	text-align: center;
-	justify-content: center;
-	margin-top: 100px;
+  text-align: center;
+  justify-content: center;
+  margin-top: 100px;
 }
 .faq {
-	margin-left: 160px !important;
+  margin-left: 160px !important;
 }
+.apollo {
+  text-align: center;
+  margin-top: 50px;
+  margin-left: 100px;
+  justify-content: center;
+
+}
+
 </style>
